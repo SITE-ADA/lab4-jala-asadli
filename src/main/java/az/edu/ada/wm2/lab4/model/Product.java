@@ -45,4 +45,8 @@ public class Product {
     public String getProductName() {
         return productName;
     }
+
+    public UUID getId() {
+        return id;
+    }
 }
