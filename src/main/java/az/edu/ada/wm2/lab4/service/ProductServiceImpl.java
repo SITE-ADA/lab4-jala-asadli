@@ -2,7 +2,6 @@ package az.edu.ada.wm2.lab4.service;
 
 import az.edu.ada.wm2.lab4.model.Product;
 import az.edu.ada.wm2.lab4.repository.ProductRepository;
-import az.edu.ada.wm2.lab4.repository.ProductRepositoryImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,24 +12,26 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-@Service
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
 
+    @Autowired
     public ProductServiceImpl(ProductRepository productRepository) {
         this.productRepository = productRepository;
     }
 
     @Override
     public Product createProduct(Product product) {
+        if (product.getId() == null) {
+            product.setId(UUID.randomUUID());
+        }
         return productRepository.save(product);
     }
 
     @Override
     public Product getProductById(UUID id) {
-        return productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+        return productRepository.findById(id).orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
     }
 
     @Override
@@ -38,14 +39,20 @@ public class ProductServiceImpl implements ProductService {
         return productRepository.findAll();
     }
 
-    // IMPORTANT: signature must match interface
     @Override
-    public Product updateProduct(Product product) {
-        UUID id = product.getId();
-        if (id == null || !productRepository.existsById(id)) {
+    public Product updateProduct(UUID id, Product product) {
+        if (!productRepository.existsById(id)) {
             throw new RuntimeException("Product not found with id: " + id);
         }
-        return productRepository.save(product);
+
+        Product updatedProduct = new Product(
+                id,
+                product.getProductName(),
+                product.getPrice(),
+                product.getExpirationDate()
+        );
+
+        return productRepository.save(updatedProduct);
     }
 
     @Override
@@ -54,24 +61,27 @@ public class ProductServiceImpl implements ProductService {
             throw new RuntimeException("Product not found with id: " + id);
         }
         productRepository.deleteById(id);
+
     }
 
     @Override
     public List<Product> getProductsExpiringBefore(LocalDate date) {
         return productRepository.findAll()
                 .stream()
-                .filter(p -> p.getExpirationDate() != null &&
-                        p.getExpirationDate().isBefore(date))
-                .toList();
+                .filter(product ->
+                        product.getExpirationDate() != null &&
+                                product.getExpirationDate().isBefore(date))
+                .collect(Collectors.toList());
     }
 
     @Override
-    public List<Product> getProductsByPriceRange(BigDecimal min, BigDecimal max) {
+    public List<Product> getProductsByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) {
         return productRepository.findAll()
                 .stream()
-                .filter(p -> p.getPrice() != null &&
-                        p.getPrice().compareTo(min) >= 0 &&
-                        p.getPrice().compareTo(max) <= 0)
-                .toList();
+                .filter(product ->
+                        product.getPrice().compareTo(minPrice) >= 0 &&
+                                product.getPrice().compareTo(maxPrice) <= 0
+                )
+                .collect(Collectors.toList());
     }
 }
