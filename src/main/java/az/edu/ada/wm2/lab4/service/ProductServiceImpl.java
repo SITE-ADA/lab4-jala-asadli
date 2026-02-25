@@ -38,14 +38,18 @@ public class ProductServiceImpl implements ProductService{
 
     @Override
     public Product updateProduct(UUID id, Product product) {
-        return null;
+        if (!productRepository.existsById(id)) {
+            throw new RuntimeException("Product not found with id: " + id);
+        }
+        product.setId(id);
+        return productRepository.save(product);
     }
-
     @Override
     public void deleteProduct(UUID id) {
-        if(!productRepository.existsById(id)){
-            throw new RuntimeException("Product not found with this id: " + id);
+        if (!productRepository.existsById(id)) {
+            throw new RuntimeException("Product not found with id: " + id);
         }
+        productRepository.deleteById(id);
     }
 
     @Override
